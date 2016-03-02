@@ -1,5 +1,6 @@
 #include <pebble.h>
 
+
 static Window *window;
 static AppTimer *timer; // to manage when to update dynamic_layer
 static Layer *dynamic_layer; // layer to update for dynamic rendering
