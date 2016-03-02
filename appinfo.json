@@ -1,0 +1,33 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "darreneck@sbcglobal.net",
+    "enableMultiJS": true,
+    "longName": "Pebble Lander",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/Shuttle",
+                "name": "SHUTTLE",
+                "targetPlatforms": null,
+                "type": "bitmap"
+            },
+            {
+                "file": "images/Space Background",
+                "name": "SPACE_BACKGROUND",
+                "targetPlatforms": null,
+                "type": "bitmap"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "Pebble Lander",
+    "uuid": "7b95e4cf-e50f-4f2c-8107-287e2fdf863c",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
