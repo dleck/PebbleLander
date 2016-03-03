@@ -74,7 +74,7 @@ static void update() {
     game_over = true;
   }
   layer_set_frame(bitmap_layer_get_layer(shuttle_layer),
-                  GRect((int)shcoords->x, (int)shcoords->y, 25,25));
+                  GRect((int)shcoords->x, (int)shcoords->y, 25,45));
 }
 
 /*
@@ -137,12 +137,12 @@ static void window_load(Window *window) {
   explosion = gbitmap_create_with_resource(RESOURCE_ID_EXPLOSION_IMG);
   shuttle_boost = gbitmap_create_with_resource(RESOURCE_ID_SHUTTLE_FLAMES);
   bitmap_layer_set_compositing_mode(shuttle_layer, GCompOpSet);
+  bitmap_layer_set_alignment(shuttle_layer,GAlignTopLeft);
   bitmap_layer_set_bitmap(shuttle_layer, shuttle);
   
   // init dynamic layer
   dynamic_layer = layer_create(GRect(0,0,144,168));
   layer_set_update_proc(dynamic_layer, (LayerUpdateProc) render_dynamic_layer);
-  layer_set_clips(dynamic_layer, false);
   layer_add_child(dynamic_layer, bitmap_layer_get_layer(shuttle_layer));
   
   // add layers to window
@@ -165,6 +165,7 @@ static void window_unload(Window *window) {
   gbitmap_destroy(shuttle);
   gbitmap_destroy(explosion);
   gbitmap_destroy(shuttle_boost);
+  bitmap_layer_destroy(shuttle_test);
   
   // Cancel timer
 	app_timer_cancel(timer);
