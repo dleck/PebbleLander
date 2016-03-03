@@ -1,13 +1,16 @@
 #include <pebble.h>
+#include "main.h"
 
 static Window *window;
 static AppTimer *timer; // to manage when to update dynamic_layer
 static Layer *dynamic_layer; // layer to update for dynamic rendering
 static BitmapLayer *background_layer;  // static background layer
 static BitmapLayer *shuttle_layer; // shuttle layer
+static TextLayer *ending_text_layer; // Win or Loss Display
 
 static GBitmap *background; // static background bitmap
 static GBitmap *shuttle; // static (for now) shuttle bitmap
+static GBitmap *explosion; // exploding shuttle
 
 static uint32_t delta = 33;	//30FPS
 
@@ -16,6 +19,8 @@ static const float gravity = 0.01; // Positive is downward
 static const float acceleration = 0.005; // Positive is upward
 static float velocity = 0;  // Positive is downward
 static bool thrust = false;
+static float losing_speed = 0.2;
+static bool game_over = false;
 
 struct Ship_coords{
   float x;
@@ -51,6 +56,19 @@ static void update() {
     velocity = 0;
   }
   
+  // Check if shuttle is landing
+  if (shcoords->y > 168 - 25 - 26) {
+    if (velocity > losing_speed) {
+      // Ship has crashed, destroy
+      bitmap_layer_set_bitmap(shuttle_layer, explosion);
+      ending_text_set_loss();
+    }
+    else {
+      // Ship landed successfully!
+      ending_text_set_win();
+    }
+    game_over = true;
+  }
   layer_set_frame(bitmap_layer_get_layer(shuttle_layer),
                   GRect((int)shcoords->x, (int)shcoords->y, 25,25));
 }
@@ -66,7 +84,9 @@ static void timer_callback(void *data) {
 	layer_mark_dirty(dynamic_layer);
 	
 	// Register next render
-	timer = app_timer_register(delta, (AppTimerCallback) timer_callback, 0);
+  if (!game_over) {
+	  timer = app_timer_register(delta, (AppTimerCallback) timer_callback, 0);
+  }
 }
 
 /*
@@ -102,12 +122,17 @@ static void window_load(Window *window) {
   background_layer = bitmap_layer_create(GRect(0,0,144,168));
   background = gbitmap_create_with_resource(RESOURCE_ID_SPACE_BACKGROUND);
   bitmap_layer_set_bitmap(background_layer, background);
+    
+  // init game message text layer
+  ending_text_layer = text_layer_create(GRect(0, 30, 144, 70));
+  text_layer_set_background_color(ending_text_layer, GColorClear);
   
   // init shuttle image
   shuttle_layer = bitmap_layer_create(GRect(60,0,25,25));
   shuttle = gbitmap_create_with_resource(RESOURCE_ID_SHUTTLE);
   bitmap_layer_set_compositing_mode(shuttle_layer, GCompOpSet);
   bitmap_layer_set_bitmap(shuttle_layer, shuttle);
+  explosion = gbitmap_create_with_resource(RESOURCE_ID_EXPLOSION_IMG);
   
   // init dynamic layer
   dynamic_layer = layer_create(GRect(0,0,144,168));
@@ -117,6 +142,7 @@ static void window_load(Window *window) {
   // add layers to window
   layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(background_layer));
   layer_add_child(window_get_root_layer(window), dynamic_layer);
+  layer_add_child(window_get_root_layer(window), text_layer_get_layer(ending_text_layer));
   
   // set click provider
   window_set_click_config_provider(window, (ClickConfigProvider) click_provider);
@@ -127,11 +153,30 @@ static void window_load(Window *window) {
 static void window_unload(Window *window) {
   // Destroy layers
   bitmap_layer_destroy(background_layer);
+  text_layer_destroy(ending_text_layer);
   layer_destroy(dynamic_layer);
   gbitmap_destroy(background);
+  gbitmap_destroy(shuttle);
+  gbitmap_destroy(explosion);
   
   // Cancel timer
 	app_timer_cancel(timer);
+}
+
+static void ending_text_set_win() {
+  text_layer_set_font(ending_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_background_color(ending_text_layer, GColorWhite);
+  text_layer_set_text_color(ending_text_layer, GColorBlack);
+  text_layer_set_text_alignment(ending_text_layer, GTextAlignmentCenter);
+  text_layer_set_text(ending_text_layer, "You Win?!? No way!!");
+}
+
+static void ending_text_set_loss() {
+  text_layer_set_font(ending_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+  text_layer_set_background_color(ending_text_layer, GColorWhite);
+  text_layer_set_text_color(ending_text_layer, GColorBlack);
+  text_layer_set_text_alignment(ending_text_layer, GTextAlignmentCenter);
+  text_layer_set_text(ending_text_layer, "You suck, man");
 }
 
 /************************* APP LIFECYCLE ***********************/
