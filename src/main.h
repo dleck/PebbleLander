@@ -19,7 +19,7 @@ static void window_unload(Window *window);
 static void ending_text_set_win();
 static void ending_text_set_loss();
 
-/***** App Lifecycles *****/
+/***** App Lifecycle *****/
 
 
 #endif

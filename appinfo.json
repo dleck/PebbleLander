@@ -10,6 +10,12 @@
     "resources": {
         "media": [
             {
+                "file": "images/shuttle flames",
+                "name": "SHUTTLE_FLAMES",
+                "targetPlatforms": null,
+                "type": "bitmap"
+            },
+            {
                 "file": "images/explosion",
                 "name": "EXPLOSION_IMG",
                 "targetPlatforms": null,

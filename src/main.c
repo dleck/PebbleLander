@@ -10,6 +10,7 @@ static TextLayer *ending_text_layer; // Win or Loss Display
 
 static GBitmap *background; // static background bitmap
 static GBitmap *shuttle; // static (for now) shuttle bitmap
+static GBitmap *shuttle_boost; // shuttle with booster flames
 static GBitmap *explosion; // exploding shuttle
 
 static uint32_t delta = 33;	//30FPS
@@ -47,10 +48,12 @@ static void update() {
   if (thrust && shcoords->y > 0) {
     shcoords->y += velocity;
     velocity -= acceleration;
+    bitmap_layer_set_bitmap(shuttle_layer, shuttle_boost);
   }
   else if (!thrust && shcoords->y < 168 - 25) {
     shcoords->y += velocity;
     velocity += gravity;
+    bitmap_layer_set_bitmap(shuttle_layer, shuttle);
   }
   else {
     velocity = 0;
@@ -66,6 +69,7 @@ static void update() {
     else {
       // Ship landed successfully!
       ending_text_set_win();
+      bitmap_layer_set_bitmap(shuttle_layer, shuttle);
     }
     game_over = true;
   }
@@ -128,15 +132,17 @@ static void window_load(Window *window) {
   text_layer_set_background_color(ending_text_layer, GColorClear);
   
   // init shuttle image
-  shuttle_layer = bitmap_layer_create(GRect(60,0,25,25));
+  shuttle_layer = bitmap_layer_create(GRect(60,0,25,45));
   shuttle = gbitmap_create_with_resource(RESOURCE_ID_SHUTTLE);
+  explosion = gbitmap_create_with_resource(RESOURCE_ID_EXPLOSION_IMG);
+  shuttle_boost = gbitmap_create_with_resource(RESOURCE_ID_SHUTTLE_FLAMES);
   bitmap_layer_set_compositing_mode(shuttle_layer, GCompOpSet);
   bitmap_layer_set_bitmap(shuttle_layer, shuttle);
-  explosion = gbitmap_create_with_resource(RESOURCE_ID_EXPLOSION_IMG);
   
   // init dynamic layer
   dynamic_layer = layer_create(GRect(0,0,144,168));
   layer_set_update_proc(dynamic_layer, (LayerUpdateProc) render_dynamic_layer);
+  layer_set_clips(dynamic_layer, false);
   layer_add_child(dynamic_layer, bitmap_layer_get_layer(shuttle_layer));
   
   // add layers to window
@@ -158,6 +164,7 @@ static void window_unload(Window *window) {
   gbitmap_destroy(background);
   gbitmap_destroy(shuttle);
   gbitmap_destroy(explosion);
+  gbitmap_destroy(shuttle_boost);
   
   // Cancel timer
 	app_timer_cancel(timer);
