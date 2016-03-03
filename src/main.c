@@ -1,6 +1,5 @@
 #include <pebble.h>
 
-
 static Window *window;
 static AppTimer *timer; // to manage when to update dynamic_layer
 static Layer *dynamic_layer; // layer to update for dynamic rendering
@@ -10,16 +9,17 @@ static BitmapLayer *shuttle_layer; // shuttle layer
 static GBitmap *background; // static background bitmap
 static GBitmap *shuttle; // static (for now) shuttle bitmap
 
-static uint32_t delta = 67;	//30FPS
+static uint32_t delta = 33;	//30FPS
 
 /******** animation variables *********/
-static const float acceleration = 0.1; // Positive is downward
+static const float gravity = 0.01; // Positive is downward
+static const float acceleration = 0.005; // Positive is upward
 static float velocity = 0;  // Positive is downward
 static bool thrust = false;
 
 struct Ship_coords{
-  short x;
-  short y;
+  float x;
+  float y;
 };
 
 static struct Ship_coords *shcoords;
@@ -27,8 +27,8 @@ static struct Ship_coords *shcoords;
 
 static struct Ship_coords* create_Ship_coords() {
   struct Ship_coords *this = malloc(sizeof(struct Ship_coords));
-	this->x = 60;
-	this->y = 0;
+	this->x = 60.0;
+	this->y = 0.0;
 	
 	return this;
 }
@@ -39,16 +39,20 @@ static struct Ship_coords* create_Ship_coords() {
  * Update the items to be drawn in the dynamic_layer
  */
 static void update() {
-  if (thrust && shcoords->y < 0) {
+  if (thrust && shcoords->y > 0) {
     shcoords->y += velocity;
     velocity -= acceleration;
   }
   else if (!thrust && shcoords->y < 168 - 25) {
     shcoords->y += velocity;
-    velocity += acceleration;
+    velocity += gravity;
+  }
+  else {
+    velocity = 0;
   }
   
-  layer_set_frame(bitmap_layer_get_layer(shuttle_layer), GRect(shcoords->x, shcoords->y, 25,25));
+  layer_set_frame(bitmap_layer_get_layer(shuttle_layer),
+                  GRect((int)shcoords->x, (int)shcoords->y, 25,25));
 }
 
 /*
