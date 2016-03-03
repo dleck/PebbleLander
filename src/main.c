@@ -165,7 +165,6 @@ static void window_unload(Window *window) {
   gbitmap_destroy(shuttle);
   gbitmap_destroy(explosion);
   gbitmap_destroy(shuttle_boost);
-  bitmap_layer_destroy(shuttle_test);
   
   // Cancel timer
 	app_timer_cancel(timer);
