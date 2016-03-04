@@ -7,6 +7,7 @@ static Layer *dynamic_layer; // layer to update for dynamic rendering
 static BitmapLayer *background_layer;  // static background layer
 static BitmapLayer *shuttle_layer; // shuttle layer
 static TextLayer *ending_text_layer; // Win or Loss Display
+static TextLayer *wins_layer; // number of wins
 
 static GBitmap *background; // static background bitmap
 static GBitmap *shuttle; // static (for now) shuttle bitmap
@@ -22,6 +23,8 @@ static float velocity = 0;  // Positive is downward
 static bool thrust = false;
 static float losing_speed = 0.2;
 static bool game_over = false;
+static int wins = 0;
+static int fuel = 1000;
 
 struct Ship_coords{
   float x;
@@ -65,16 +68,38 @@ static void update() {
       // Ship has crashed, destroy
       bitmap_layer_set_bitmap(shuttle_layer, explosion);
       ending_text_set_loss();
+      wins = 0;
     }
     else {
       // Ship landed successfully!
       ending_text_set_win();
       bitmap_layer_set_bitmap(shuttle_layer, shuttle);
+      wins++;
     }
     game_over = true;
+    update_wins_text();
   }
   layer_set_frame(bitmap_layer_get_layer(shuttle_layer),
-                  GRect((int)shcoords->x, (int)shcoords->y, 25,45));
+                  GRect((int)shcoords->x,(int)shcoords->y,25,45));
+}
+
+/*
+ * Reset everything for new round
+ */
+static void reset() {
+  // Reset Ship
+  bitmap_layer_set_bitmap(shuttle_layer, shuttle);
+  shcoords->y = 0;
+  layer_set_frame(bitmap_layer_get_layer(shuttle_layer),
+                  GRect((int)shcoords->x,(int)shcoords->y,25,45));
+  velocity = 0.0;
+  game_over = false;
+  
+  // Clear ending text from last round
+  ending_text_clear();
+  
+  // set timer for new animations
+  timer = app_timer_register(delta, (AppTimerCallback) timer_callback, 0);
 }
 
 /*
@@ -115,9 +140,16 @@ static void click_handler_up_pressed() {
 static void click_handler_up_released() {
   thrust = false;
 }
+static void click_handler_select_clicked() {
+  if (game_over == true) {
+    reset();
+  }
+}
 static void click_provider(Window *window) {
   // Assign handlers for raw UP button input
   window_raw_click_subscribe(BUTTON_ID_UP, click_handler_up_pressed, click_handler_up_released, NULL);
+  // Assign for select button clicked
+  window_single_click_subscribe(BUTTON_ID_SELECT, click_handler_select_clicked);
 }
 /************************* WINDOW LIFECYCLE ***********************/
 
@@ -127,9 +159,16 @@ static void window_load(Window *window) {
   background = gbitmap_create_with_resource(RESOURCE_ID_SPACE_BACKGROUND);
   bitmap_layer_set_bitmap(background_layer, background);
     
-  // init game message text layer
+  // init game message text layers
   ending_text_layer = text_layer_create(GRect(0, 30, 144, 70));
   text_layer_set_background_color(ending_text_layer, GColorClear);
+  wins_layer = text_layer_create(GRect(60,0,84,25));
+  text_layer_set_background_color(wins_layer, GColorClear);
+  text_layer_set_text_color(wins_layer, GColorWhite);
+  text_layer_set_text_alignment(wins_layer, GTextAlignmentRight);
+  text_layer_set_font(wins_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_text(wins_layer, "0");
+  
   
   // init shuttle image
   shuttle_layer = bitmap_layer_create(GRect(60,0,25,45));
@@ -149,6 +188,7 @@ static void window_load(Window *window) {
   layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(background_layer));
   layer_add_child(window_get_root_layer(window), dynamic_layer);
   layer_add_child(window_get_root_layer(window), text_layer_get_layer(ending_text_layer));
+  layer_add_child(window_get_root_layer(window), text_layer_get_layer(wins_layer));
   
   // set click provider
   window_set_click_config_provider(window, (ClickConfigProvider) click_provider);
@@ -160,6 +200,7 @@ static void window_unload(Window *window) {
   // Destroy layers
   bitmap_layer_destroy(background_layer);
   text_layer_destroy(ending_text_layer);
+  text_layer_destroy(wins_layer);
   layer_destroy(dynamic_layer);
   gbitmap_destroy(background);
   gbitmap_destroy(shuttle);
@@ -184,6 +225,17 @@ static void ending_text_set_loss() {
   text_layer_set_text_color(ending_text_layer, GColorBlack);
   text_layer_set_text_alignment(ending_text_layer, GTextAlignmentCenter);
   text_layer_set_text(ending_text_layer, "You suck, man");
+}
+
+static void ending_text_clear() {
+  text_layer_set_background_color(ending_text_layer, GColorClear);
+  text_layer_set_text(ending_text_layer, "");
+}
+
+static void update_wins_text() {
+  static char str[4];
+  snprintf(str, sizeof str, "%d", wins);
+  text_layer_set_text(wins_layer, str);
 }
 
 /************************* APP LIFECYCLE ***********************/
